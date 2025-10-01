@@ -29,6 +29,8 @@ let currentGroup = '';
 let currentUsername = '';
 
 function initializeEventListeners() {
+    console.log('Initializing event listeners...');
+    
     // Form submission
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
@@ -49,16 +51,66 @@ function initializeEventListeners() {
                 username: username.trim()
             });
         });
+        console.log('Login form event listener added');
     }
 
-    // Message sending
+    // Admin panel buttons
+    const manageGroupsBtn = document.getElementById('manage-groups-btn');
+    const backToLoginBtn = document.getElementById('back-to-login-btn');
+    const createGroupBtn = document.getElementById('create-group-btn');
+    const updateGroupBtn = document.getElementById('update-group-btn');
+    const deleteGroupBtn = document.getElementById('delete-group-btn');
+    const leaveChatBtn = document.getElementById('leave-chat-btn');
+    const sendMessageBtn = document.getElementById('send-message-btn');
+
+    if (manageGroupsBtn) {
+        manageGroupsBtn.addEventListener('click', showAdminPanel);
+        console.log('Manage Groups button event listener added');
+    } else {
+        console.error('Manage Groups button not found');
+    }
+
+    if (backToLoginBtn) {
+        backToLoginBtn.addEventListener('click', hideAdminPanel);
+        console.log('Back to Login button event listener added');
+    }
+
+    if (createGroupBtn) {
+        createGroupBtn.addEventListener('click', createGroup);
+        console.log('Create Group button event listener added');
+    }
+
+    if (updateGroupBtn) {
+        updateGroupBtn.addEventListener('click', updateGroup);
+        console.log('Update Group button event listener added');
+    }
+
+    if (deleteGroupBtn) {
+        deleteGroupBtn.addEventListener('click', deleteGroup);
+        console.log('Delete Group button event listener added');
+    }
+
+    if (leaveChatBtn) {
+        leaveChatBtn.addEventListener('click', leaveChat);
+        console.log('Leave Chat button event listener added');
+    }
+
+    if (sendMessageBtn) {
+        sendMessageBtn.addEventListener('click', sendMessage);
+        console.log('Send Message button event listener added');
+    }
+
+    // Message sending with Enter key
     if (messageInput) {
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
+        console.log('Message input event listener added');
     }
+
+    console.log('All event listeners initialized successfully');
 }
 
 // Socket event listeners
@@ -81,10 +133,12 @@ socket.on('join-success', (data) => {
     if (groupDisplay) groupDisplay.textContent = currentGroup;
     showSection(chatSection);
     clearError('login-error');
+    console.log('Joined group successfully:', currentGroup);
 });
 
 socket.on('join-error', (message) => {
     showError('login-error', message);
+    console.log('Join error:', message);
 });
 
 socket.on('chat-history', (messages) => {
@@ -94,37 +148,50 @@ socket.on('chat-history', (messages) => {
             addMessageToChat(message);
         });
     }
+    console.log('Chat history loaded:', messages.length, 'messages');
 });
 
 socket.on('new-message', (message) => {
     addMessageToChat(message);
+    console.log('New message received:', message);
 });
 
 socket.on('user-joined', (data) => {
     addSystemMessage(data.message);
+    console.log('User joined:', data.username);
 });
 
 socket.on('user-left', (data) => {
     addSystemMessage(data.message);
+    console.log('User left:', data.username);
 });
 
 socket.on('message-error', (message) => {
     showError('chat-error', message);
+    console.log('Message error:', message);
 });
 
 // Message sending
 function sendMessage() {
-    if (!messageInput) return;
+    if (!messageInput) {
+        console.error('Message input not found');
+        return;
+    }
     
     const message = messageInput.value.trim();
     if (message && currentGroup) {
+        console.log('Sending message:', message);
         socket.emit('send-message', { message });
         messageInput.value = '';
+    } else {
+        console.log('Cannot send message - no message content or not in a group');
     }
 }
 
 // Admin functions
 async function createGroup() {
+    console.log('Create group function called');
+    
     const adminPassword = document.getElementById('admin-password')?.value;
     const groupName = document.getElementById('new-group-name')?.value;
     const groupPassword = document.getElementById('new-group-password')?.value;
@@ -133,6 +200,8 @@ async function createGroup() {
         showAdminMessage('All fields are required', 'error');
         return;
     }
+    
+    console.log('Creating group:', groupName);
     
     try {
         const response = await fetch(`${BACKEND_URL}/api/groups/create`, {
@@ -151,8 +220,10 @@ async function createGroup() {
             // Clear form fields
             document.getElementById('new-group-name').value = '';
             document.getElementById('new-group-password').value = '';
+            console.log('Group created successfully:', groupName);
         } else {
             showAdminMessage(result.error, 'error');
+            console.log('Group creation failed:', result.error);
         }
     } catch (error) {
         console.error('Create group error:', error);
@@ -161,6 +232,8 @@ async function createGroup() {
 }
 
 async function updateGroup() {
+    console.log('Update group function called');
+    
     const adminPassword = document.getElementById('admin-password')?.value;
     const groupName = document.getElementById('update-group-name')?.value;
     const newName = document.getElementById('updated-name')?.value;
@@ -170,6 +243,8 @@ async function updateGroup() {
         showAdminMessage('Admin password and group name are required', 'error');
         return;
     }
+    
+    console.log('Updating group:', groupName);
     
     try {
         const response = await fetch(`${BACKEND_URL}/api/groups/${encodeURIComponent(groupName)}`, {
@@ -192,8 +267,10 @@ async function updateGroup() {
             document.getElementById('update-group-name').value = '';
             document.getElementById('updated-name').value = '';
             document.getElementById('updated-password').value = '';
+            console.log('Group updated successfully:', groupName);
         } else {
             showAdminMessage(result.error, 'error');
+            console.log('Group update failed:', result.error);
         }
     } catch (error) {
         console.error('Update group error:', error);
@@ -202,6 +279,8 @@ async function updateGroup() {
 }
 
 async function deleteGroup() {
+    console.log('Delete group function called');
+    
     const adminPassword = document.getElementById('admin-password')?.value;
     const groupName = document.getElementById('delete-group-name')?.value;
     
@@ -211,8 +290,11 @@ async function deleteGroup() {
     }
     
     if (!confirm(`Are you sure you want to delete group "${groupName}"? This will delete all messages in this group.`)) {
+        console.log('Group deletion cancelled by user');
         return;
     }
+    
+    console.log('Deleting group:', groupName);
     
     try {
         const response = await fetch(`${BACKEND_URL}/api/groups/${encodeURIComponent(groupName)}`, {
@@ -228,8 +310,10 @@ async function deleteGroup() {
             showAdminMessage('Group deleted successfully!', 'success');
             // Clear form field
             document.getElementById('delete-group-name').value = '';
+            console.log('Group deleted successfully:', groupName);
         } else {
             showAdminMessage(result.error, 'error');
+            console.log('Group deletion failed:', result.error);
         }
     } catch (error) {
         console.error('Delete group error:', error);
@@ -260,7 +344,7 @@ function showError(elementId, message) {
     if (errorElement) {
         errorElement.textContent = message;
         errorElement.style.display = 'block';
-        console.error('Error:', message);
+        console.error('Error shown:', message);
     }
 }
 
@@ -279,7 +363,7 @@ function showAdminMessage(message, type) {
         messageElement.className = `message ${type}`;
         messageElement.style.display = 'block';
         
-        console.log('Admin message:', message, type);
+        console.log('Admin message shown:', message, type);
         
         setTimeout(() => {
             messageElement.textContent = '';
@@ -290,7 +374,10 @@ function showAdminMessage(message, type) {
 }
 
 function addMessageToChat(message) {
-    if (!chatMessages) return;
+    if (!chatMessages) {
+        console.error('Chat messages container not found');
+        return;
+    }
     
     const messageElement = document.createElement('div');
     messageElement.className = `message-item ${message.username === currentUsername ? 'own' : ''}`;
@@ -308,7 +395,10 @@ function addMessageToChat(message) {
 }
 
 function addSystemMessage(message) {
-    if (!chatMessages) return;
+    if (!chatMessages) {
+        console.error('Chat messages container not found');
+        return;
+    }
     
     const messageElement = document.createElement('div');
     messageElement.className = 'system-message';
@@ -327,9 +417,9 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
-// Admin panel functions - FIXED
+// Admin panel functions
 function showAdminPanel() {
-    console.log('showAdminPanel called');
+    console.log('showAdminPanel function called');
     if (adminSection) {
         showSection(adminSection);
     } else {
@@ -338,13 +428,14 @@ function showAdminPanel() {
 }
 
 function hideAdminPanel() {
-    console.log('hideAdminPanel called');
+    console.log('hideAdminPanel function called');
     if (loginSection) {
         showSection(loginSection);
     }
 }
 
 function leaveChat() {
+    console.log('leaveChat function called');
     socket.disconnect();
     socket.connect();
     currentGroup = '';
@@ -353,13 +444,13 @@ function leaveChat() {
     if (chatMessages) chatMessages.innerHTML = '';
 }
 
-// Debug: Check if functions are available globally
-console.log('Global functions available:', {
-    showAdminPanel: typeof showAdminPanel,
-    hideAdminPanel: typeof hideAdminPanel,
-    createGroup: typeof createGroup,
-    updateGroup: typeof updateGroup,
-    deleteGroup: typeof deleteGroup,
-    leaveChat: typeof leaveChat,
-    sendMessage: typeof sendMessage
-});
+// Make functions globally available (backup for onclick)
+window.showAdminPanel = showAdminPanel;
+window.hideAdminPanel = hideAdminPanel;
+window.createGroup = createGroup;
+window.updateGroup = updateGroup;
+window.deleteGroup = deleteGroup;
+window.leaveChat = leaveChat;
+window.sendMessage = sendMessage;
+
+console.log('All functions initialized and ready');
