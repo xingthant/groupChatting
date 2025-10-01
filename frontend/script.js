@@ -1,29 +1,78 @@
-// Backend URL - will be updated after deployment
+// Backend URL
 const BACKEND_URL = 'https://group-chat-backend-zmm4.onrender.com';
 const socket = io(BACKEND_URL);
 
-// DOM Elements
-const loginSection = document.getElementById('login-section');
-const adminSection = document.getElementById('admin-section');
-const chatSection = document.getElementById('chat-section');
-const loginForm = document.getElementById('login-form');
-const chatMessages = document.getElementById('chat-messages');
-const messageInput = document.getElementById('message-input');
-const groupDisplay = document.getElementById('group-display');
+// DOM Elements - moved to top and initialized properly
+let loginSection, adminSection, chatSection, loginForm, chatMessages, messageInput, groupDisplay;
+
+// Initialize DOM elements when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loginSection = document.getElementById('login-section');
+    adminSection = document.getElementById('admin-section');
+    chatSection = document.getElementById('chat-section');
+    loginForm = document.getElementById('login-form');
+    chatMessages = document.getElementById('chat-messages');
+    messageInput = document.getElementById('message-input');
+    groupDisplay = document.getElementById('group-display');
+    
+    initializeEventListeners();
+});
 
 let currentGroup = '';
 let currentUsername = '';
 let typingTimer;
 
+function initializeEventListeners() {
+    // Form submission
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const groupName = document.getElementById('group-name').value;
+            const password = document.getElementById('group-password').value;
+            const username = document.getElementById('username').value;
+            
+            if (!groupName || !password || !username) {
+                showError('login-error', 'All fields are required');
+                return;
+            }
+            
+            socket.emit('join-group', {
+                groupName: groupName.trim(),
+                password: password,
+                username: username.trim()
+            });
+        });
+    }
+
+    // Message sending
+    if (messageInput) {
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+}
+
 // Socket event listeners
 socket.on('connect', () => {
-    console.log('Connected to server');
+    console.log('Connected to server:', BACKEND_URL);
+});
+
+socket.on('disconnect', () => {
+    console.log('Disconnected from server');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    showError('login-error', 'Cannot connect to server. Please try again.');
 });
 
 socket.on('join-success', (data) => {
     currentGroup = data.groupName;
     currentUsername = data.username;
-    groupDisplay.textContent = currentGroup;
+    if (groupDisplay) groupDisplay.textContent = currentGroup;
     showSection(chatSection);
     clearError('login-error');
 });
@@ -33,10 +82,12 @@ socket.on('join-error', (message) => {
 });
 
 socket.on('chat-history', (messages) => {
-    chatMessages.innerHTML = '';
-    messages.forEach(message => {
-        addMessageToChat(message);
-    });
+    if (chatMessages) {
+        chatMessages.innerHTML = '';
+        messages.forEach(message => {
+            addMessageToChat(message);
+        });
+    }
 });
 
 socket.on('new-message', (message) => {
@@ -51,46 +102,26 @@ socket.on('user-left', (data) => {
     addSystemMessage(data.message);
 });
 
-// Form submission
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    const groupName = document.getElementById('group-name').value;
-    const password = document.getElementById('group-password').value;
-    const username = document.getElementById('username').value;
-    
-    if (!groupName || !password || !username) {
-        showError('login-error', 'All fields are required');
-        return;
-    }
-    
-    socket.emit('join-group', {
-        groupName: groupName.trim(),
-        password: password,
-        username: username.trim()
-    });
+socket.on('message-error', (message) => {
+    showError('chat-error', message);
 });
 
 // Message sending
 function sendMessage() {
+    if (!messageInput) return;
+    
     const message = messageInput.value.trim();
-    if (message) {
+    if (message && currentGroup) {
         socket.emit('send-message', { message });
         messageInput.value = '';
     }
 }
 
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
-
 // Admin functions
 async function createGroup() {
-    const adminPassword = document.getElementById('admin-password').value;
-    const groupName = document.getElementById('new-group-name').value;
-    const groupPassword = document.getElementById('new-group-password').value;
+    const adminPassword = document.getElementById('admin-password')?.value;
+    const groupName = document.getElementById('new-group-name')?.value;
+    const groupPassword = document.getElementById('new-group-password')?.value;
     
     if (!adminPassword || !groupName || !groupPassword) {
         showAdminMessage('All fields are required', 'error');
@@ -122,10 +153,10 @@ async function createGroup() {
 }
 
 async function updateGroup() {
-    const adminPassword = document.getElementById('admin-password').value;
-    const groupName = document.getElementById('update-group-name').value;
-    const newName = document.getElementById('updated-name').value;
-    const newPassword = document.getElementById('updated-password').value;
+    const adminPassword = document.getElementById('admin-password')?.value;
+    const groupName = document.getElementById('update-group-name')?.value;
+    const newName = document.getElementById('updated-name')?.value;
+    const newPassword = document.getElementById('updated-password')?.value;
     
     if (!adminPassword || !groupName) {
         showAdminMessage('Admin password and group name are required', 'error');
@@ -161,8 +192,8 @@ async function updateGroup() {
 }
 
 async function deleteGroup() {
-    const adminPassword = document.getElementById('admin-password').value;
-    const groupName = document.getElementById('delete-group-name').value;
+    const adminPassword = document.getElementById('admin-password')?.value;
+    const groupName = document.getElementById('delete-group-name')?.value;
     
     if (!adminPassword || !groupName) {
         showAdminMessage('Admin password and group name are required', 'error');
@@ -196,34 +227,44 @@ async function deleteGroup() {
 
 // UI Helper functions
 function showSection(section) {
+    if (!loginSection || !adminSection || !chatSection) return;
+    
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     section.classList.add('active');
 }
 
 function showError(elementId, message) {
     const errorElement = document.getElementById(elementId);
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
 }
 
 function clearError(elementId) {
     const errorElement = document.getElementById(elementId);
-    errorElement.textContent = '';
-    errorElement.style.display = 'none';
+    if (errorElement) {
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+    }
 }
 
 function showAdminMessage(message, type) {
     const messageElement = document.getElementById('admin-message');
-    messageElement.textContent = message;
-    messageElement.className = `message ${type}`;
-    
-    setTimeout(() => {
-        messageElement.textContent = '';
-        messageElement.className = 'message';
-    }, 5000);
+    if (messageElement) {
+        messageElement.textContent = message;
+        messageElement.className = `message ${type}`;
+        
+        setTimeout(() => {
+            messageElement.textContent = '';
+            messageElement.className = 'message';
+        }, 5000);
+    }
 }
 
 function addMessageToChat(message) {
+    if (!chatMessages) return;
+    
     const messageElement = document.createElement('div');
     messageElement.className = `message-item ${message.username === currentUsername ? 'own' : ''}`;
     
@@ -240,6 +281,8 @@ function addMessageToChat(message) {
 }
 
 function addSystemMessage(message) {
+    if (!chatMessages) return;
+    
     const messageElement = document.createElement('div');
     messageElement.className = 'system-message';
     messageElement.textContent = message;
@@ -271,5 +314,5 @@ function leaveChat() {
     currentGroup = '';
     currentUsername = '';
     showSection(loginSection);
-    chatMessages.innerHTML = '';
+    if (chatMessages) chatMessages.innerHTML = '';
 }
