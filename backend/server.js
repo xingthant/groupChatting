@@ -18,9 +18,9 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration - simplified for production
+// CORS configuration
 app.use(cors({
-    origin: true, // Allow all origins in production
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
@@ -38,15 +38,20 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Serve frontend for any unknown routes - FIXED: Use a proper catch-all
-app.use('*', (req, res) => {
+// FIXED: Serve frontend for any unknown routes using a different approach
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
+// For all other routes, serve the frontend
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Socket.io configuration
 const io = socketIo(server, {
     cors: {
-        origin: "*", // Allow all origins
+        origin: "*",
         methods: ["GET", "POST"],
         credentials: true
     }
