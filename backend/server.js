@@ -20,7 +20,7 @@ const server = http.createServer(app);
 // CORS configuration - allow your frontend domain
 const corsOptions = {
     origin: [
-        'https://group-chat-frontend.onrender.com', // Your frontend URL (we'll create this)
+        'https://groupchatting-1.onrender.com', // Your frontend URL (we'll create this)
         'http://localhost:3000',
         'http://localhost:5000'
     ],
@@ -47,7 +47,7 @@ app.get('/health', (req, res) => {
 const io = socketIo(server, {
     cors: {
         origin: [
-            'https://group-chat-frontend.onrender.com',
+            'https://groupchatting-1.onrender.com',
             'http://localhost:3000'
         ],
         methods: ["GET", "POST"],
