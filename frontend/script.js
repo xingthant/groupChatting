@@ -1,4 +1,6 @@
-const socket = io();
+// Backend URL - will be updated after deployment
+const BACKEND_URL = 'https://group-chat-backend-zmm4.onrender.com';
+const socket = io(BACKEND_URL);
 
 // DOM Elements
 const loginSection = document.getElementById('login-section');
@@ -14,6 +16,10 @@ let currentUsername = '';
 let typingTimer;
 
 // Socket event listeners
+socket.on('connect', () => {
+    console.log('Connected to server');
+});
+
 socket.on('join-success', (data) => {
     currentGroup = data.groupName;
     currentUsername = data.username;
@@ -45,18 +51,6 @@ socket.on('user-left', (data) => {
     addSystemMessage(data.message);
 });
 
-socket.on('user-typing', (data) => {
-    showTypingIndicator(data.username);
-});
-
-socket.on('user-stop-typing', (data) => {
-    hideTypingIndicator(data.username);
-});
-
-socket.on('message-error', (message) => {
-    showError('chat-error', message);
-});
-
 // Form submission
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -83,7 +77,6 @@ function sendMessage() {
     if (message) {
         socket.emit('send-message', { message });
         messageInput.value = '';
-        socket.emit('typing-stop');
     }
 }
 
@@ -93,17 +86,7 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Typing indicators
-messageInput.addEventListener('input', () => {
-    socket.emit('typing-start');
-    
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => {
-        socket.emit('typing-stop');
-    }, 1000);
-});
-
-// Admin functions (remain the same as previous version)
+// Admin functions
 async function createGroup() {
     const adminPassword = document.getElementById('admin-password').value;
     const groupName = document.getElementById('new-group-name').value;
@@ -115,7 +98,7 @@ async function createGroup() {
     }
     
     try {
-        const response = await fetch('/api/groups/create', {
+        const response = await fetch(`${BACKEND_URL}/api/groups/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -134,7 +117,7 @@ async function createGroup() {
             showAdminMessage(result.error, 'error');
         }
     } catch (error) {
-        showAdminMessage('Error creating group', 'error');
+        showAdminMessage('Error creating group. Check backend connection.', 'error');
     }
 }
 
@@ -150,7 +133,7 @@ async function updateGroup() {
     }
     
     try {
-        const response = await fetch(`/api/groups/${encodeURIComponent(groupName)}`, {
+        const response = await fetch(`${BACKEND_URL}/api/groups/${encodeURIComponent(groupName)}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -173,7 +156,7 @@ async function updateGroup() {
             showAdminMessage(result.error, 'error');
         }
     } catch (error) {
-        showAdminMessage('Error updating group', 'error');
+        showAdminMessage('Error updating group. Check backend connection.', 'error');
     }
 }
 
@@ -186,12 +169,12 @@ async function deleteGroup() {
         return;
     }
     
-    if (!confirm(`Are you sure you want to delete group "${groupName}"? This will also delete all messages in this group.`)) {
+    if (!confirm(`Are you sure you want to delete group "${groupName}"?`)) {
         return;
     }
     
     try {
-        const response = await fetch(`/api/groups/${encodeURIComponent(groupName)}`, {
+        const response = await fetch(`${BACKEND_URL}/api/groups/${encodeURIComponent(groupName)}`, {
             method: 'DELETE',
             headers: {
                 'admin-password': adminPassword
@@ -207,35 +190,7 @@ async function deleteGroup() {
             showAdminMessage(result.error, 'error');
         }
     } catch (error) {
-        showAdminMessage('Error deleting group', 'error');
-    }
-}
-
-// New: Get group statistics
-async function getGroupStats() {
-    const adminPassword = document.getElementById('admin-password').value;
-    
-    if (!adminPassword) {
-        showAdminMessage('Admin password required', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/groups/stats', {
-            headers: {
-                'admin-password': adminPassword
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            showAdminMessage(`Stats: ${result.totalGroups} groups, ${result.totalMessages} total messages`, 'success');
-        } else {
-            showAdminMessage(result.error, 'error');
-        }
-    } catch (error) {
-        showAdminMessage('Error fetching stats', 'error');
+        showAdminMessage('Error deleting group. Check backend connection.', 'error');
     }
 }
 
@@ -293,26 +248,6 @@ function addSystemMessage(message) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function showTypingIndicator(username) {
-    // Remove existing typing indicator
-    hideTypingIndicator();
-    
-    const typingElement = document.createElement('div');
-    typingElement.id = 'typing-indicator';
-    typingElement.className = 'typing-indicator';
-    typingElement.textContent = `${username} is typing...`;
-    
-    chatMessages.appendChild(typingElement);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function hideTypingIndicator() {
-    const existingIndicator = document.getElementById('typing-indicator');
-    if (existingIndicator) {
-        existingIndicator.remove();
-    }
-}
-
 function escapeHtml(unsafe) {
     return unsafe
         .replace(/&/g, "&amp;")
@@ -337,5 +272,4 @@ function leaveChat() {
     currentUsername = '';
     showSection(loginSection);
     chatMessages.innerHTML = '';
-    hideTypingIndicator();
 }
