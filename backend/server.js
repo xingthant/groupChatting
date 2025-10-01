@@ -38,7 +38,7 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-Serve frontend for any unknown routes - FIXED: Use a proper catch-all
+// Serve frontend for any unknown routes - FIXED: Use a proper catch-all
 app.use('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
