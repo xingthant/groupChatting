@@ -18,25 +18,13 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Allow all origins in development, restrict in production if needed
-        if (process.env.NODE_ENV === 'production') {
-            // You can add specific production domains here
-            callback(null, true);
-        } else {
-            callback(null, true);
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-};
+// CORS configuration - simplified for production
+app.use(cors({
+    origin: true, // Allow all origins in production
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve static files from frontend directory
@@ -50,17 +38,15 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Serve frontend for any unknown routes (SPA support) - FIXED ROUTE
-app.get('*', (req, res) => {
+// Serve frontend for any unknown routes - FIXED: Use a proper catch-all
+app.use('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Socket.io configuration
 const io = socketIo(server, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' 
-            ? true // Allow all origins in production
-            : ["http://localhost:3000", "http://localhost:5000"],
+        origin: "*", // Allow all origins
         methods: ["GET", "POST"],
         credentials: true
     }
