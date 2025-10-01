@@ -2,7 +2,7 @@
 const BACKEND_URL = 'https://group-chat-backend-zmm4.onrender.com';
 const socket = io(BACKEND_URL);
 
-// DOM Elements - moved to top and initialized properly
+// DOM Elements
 let loginSection, adminSection, chatSection, loginForm, chatMessages, messageInput, groupDisplay;
 
 // Initialize DOM elements when page loads
@@ -15,12 +15,18 @@ document.addEventListener('DOMContentLoaded', function() {
     messageInput = document.getElementById('message-input');
     groupDisplay = document.getElementById('group-display');
     
+    console.log('DOM elements initialized:', {
+        loginSection: !!loginSection,
+        adminSection: !!adminSection,
+        chatSection: !!chatSection,
+        loginForm: !!loginForm
+    });
+    
     initializeEventListeners();
 });
 
 let currentGroup = '';
 let currentUsername = '';
-let typingTimer;
 
 function initializeEventListeners() {
     // Form submission
@@ -142,12 +148,14 @@ async function createGroup() {
         
         if (response.ok) {
             showAdminMessage('Group created successfully!', 'success');
+            // Clear form fields
             document.getElementById('new-group-name').value = '';
             document.getElementById('new-group-password').value = '';
         } else {
             showAdminMessage(result.error, 'error');
         }
     } catch (error) {
+        console.error('Create group error:', error);
         showAdminMessage('Error creating group. Check backend connection.', 'error');
     }
 }
@@ -180,6 +188,7 @@ async function updateGroup() {
         
         if (response.ok) {
             showAdminMessage('Group updated successfully!', 'success');
+            // Clear form fields
             document.getElementById('update-group-name').value = '';
             document.getElementById('updated-name').value = '';
             document.getElementById('updated-password').value = '';
@@ -187,6 +196,7 @@ async function updateGroup() {
             showAdminMessage(result.error, 'error');
         }
     } catch (error) {
+        console.error('Update group error:', error);
         showAdminMessage('Error updating group. Check backend connection.', 'error');
     }
 }
@@ -200,7 +210,7 @@ async function deleteGroup() {
         return;
     }
     
-    if (!confirm(`Are you sure you want to delete group "${groupName}"?`)) {
+    if (!confirm(`Are you sure you want to delete group "${groupName}"? This will delete all messages in this group.`)) {
         return;
     }
     
@@ -216,21 +226,33 @@ async function deleteGroup() {
         
         if (response.ok) {
             showAdminMessage('Group deleted successfully!', 'success');
+            // Clear form field
             document.getElementById('delete-group-name').value = '';
         } else {
             showAdminMessage(result.error, 'error');
         }
     } catch (error) {
+        console.error('Delete group error:', error);
         showAdminMessage('Error deleting group. Check backend connection.', 'error');
     }
 }
 
 // UI Helper functions
 function showSection(section) {
-    if (!loginSection || !adminSection || !chatSection) return;
+    if (!loginSection || !adminSection || !chatSection) {
+        console.error('Sections not found:', { loginSection, adminSection, chatSection });
+        return;
+    }
     
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    // Hide all sections
+    loginSection.classList.remove('active');
+    adminSection.classList.remove('active');
+    chatSection.classList.remove('active');
+    
+    // Show the requested section
     section.classList.add('active');
+    
+    console.log('Showing section:', section.id);
 }
 
 function showError(elementId, message) {
@@ -238,6 +260,7 @@ function showError(elementId, message) {
     if (errorElement) {
         errorElement.textContent = message;
         errorElement.style.display = 'block';
+        console.error('Error:', message);
     }
 }
 
@@ -254,10 +277,14 @@ function showAdminMessage(message, type) {
     if (messageElement) {
         messageElement.textContent = message;
         messageElement.className = `message ${type}`;
+        messageElement.style.display = 'block';
+        
+        console.log('Admin message:', message, type);
         
         setTimeout(() => {
             messageElement.textContent = '';
             messageElement.className = 'message';
+            messageElement.style.display = 'none';
         }, 5000);
     }
 }
@@ -300,12 +327,21 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
+// Admin panel functions - FIXED
 function showAdminPanel() {
-    showSection(adminSection);
+    console.log('showAdminPanel called');
+    if (adminSection) {
+        showSection(adminSection);
+    } else {
+        console.error('adminSection not found');
+    }
 }
 
 function hideAdminPanel() {
-    showSection(loginSection);
+    console.log('hideAdminPanel called');
+    if (loginSection) {
+        showSection(loginSection);
+    }
 }
 
 function leaveChat() {
@@ -316,3 +352,14 @@ function leaveChat() {
     showSection(loginSection);
     if (chatMessages) chatMessages.innerHTML = '';
 }
+
+// Debug: Check if functions are available globally
+console.log('Global functions available:', {
+    showAdminPanel: typeof showAdminPanel,
+    hideAdminPanel: typeof hideAdminPanel,
+    createGroup: typeof createGroup,
+    updateGroup: typeof updateGroup,
+    deleteGroup: typeof deleteGroup,
+    leaveChat: typeof leaveChat,
+    sendMessage: typeof sendMessage
+});
