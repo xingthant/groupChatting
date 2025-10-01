@@ -23,4 +23,4 @@ module.exports = {
     verifyAdmin, 
     hashGroupPassword, 
     compareGroupPassword 
-};
+}; 
