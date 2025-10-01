@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const path = require('path'); // Add this import
 const connectDB = require('./config/database');
 const groupRoutes = require('./routes/groups');
 const Group = require('./models/Group');
@@ -18,23 +17,13 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
+// CORS configuration - allow your frontend domain
 const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            'https://your-frontend-url.onrender.com',
-            'http://localhost:3000'
-        ];
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: [
+        'https://group-chat-frontend.onrender.com', // Your frontend URL (we'll create this)
+        'http://localhost:3000',
+        'http://localhost:5000'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 };
@@ -42,33 +31,25 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Serve static files in production - MUST COME BEFORE ROUTES
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../frontend')));
-    console.log('✅ Serving static files from frontend directory');
-}
-
 // Routes
 app.use('/api/groups', groupRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// Serve frontend for any unknown routes (SPA support)
-if (process.env.NODE_ENV === 'production') {
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/index.html'));
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        message: 'Backend API is running'
     });
-}
+});
 
 // Socket.io configuration
 const io = socketIo(server, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' 
-            ? ['https://your-frontend-url.onrender.com'] 
-            : ['http://localhost:3000', 'http://localhost:5000'],
+        origin: [
+            'https://group-chat-frontend.onrender.com',
+            'http://localhost:3000'
+        ],
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -211,8 +192,8 @@ io.on('connection', async (socket) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-    console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    console.log(`📁 Static files served from: ${path.join(__dirname, '../frontend')}`);
+    console.log(`🚀 Backend Server running on port ${PORT}`);
+    console.log(`📊 MongoDB Connected`);
 });
 
 module.exports = { app, io };
