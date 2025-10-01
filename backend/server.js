@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const path = require('path'); // Add this import
+const path = require('path');
 const connectDB = require('./config/database');
 const groupRoutes = require('./routes/groups');
 const Group = require('./models/Group');
@@ -24,15 +24,12 @@ const corsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        const allowedOrigins = [
-            'https://your-frontend-url.onrender.com',
-            'http://localhost:3000'
-        ];
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        // Allow all origins in development, restrict in production if needed
+        if (process.env.NODE_ENV === 'production') {
+            // You can add specific production domains here
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            callback(null, true);
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -42,11 +39,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Serve static files in production - MUST COME BEFORE ROUTES
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../frontend')));
-    console.log('✅ Serving static files from frontend directory');
-}
+// Serve static files from frontend directory
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Routes
 app.use('/api/groups', groupRoutes);
@@ -56,19 +50,17 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Serve frontend for any unknown routes (SPA support)
-if (process.env.NODE_ENV === 'production') {
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/index.html'));
-    });
-}
+// Serve frontend for any unknown routes (SPA support) - FIXED ROUTE
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 // Socket.io configuration
 const io = socketIo(server, {
     cors: {
         origin: process.env.NODE_ENV === 'production' 
-            ? ['https://your-frontend-url.onrender.com'] 
-            : ['http://localhost:3000', 'http://localhost:5000'],
+            ? true // Allow all origins in production
+            : ["http://localhost:3000", "http://localhost:5000"],
         methods: ["GET", "POST"],
         credentials: true
     }
