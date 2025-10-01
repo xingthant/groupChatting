@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Group Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="login-section" class="section active">
+            <h1>Join Group Chat</h1>
+            <form id="login-form">
+                <input type="text" id="group-name" placeholder="Group Name" required>
+                <input type="password" id="group-password" placeholder="Group Password" required>
+                <input type="text" id="username" placeholder="Your Name" required>
+                <button type="submit">Join Chat</button>
+            </form>
+            <div id="login-error" class="error-message"></div>
+            
+            <!-- Admin Section -->
+            <div class="admin-section">
+                <h3>Admin Panel</h3>
+                <button onclick="showAdminPanel()">Manage Groups</button>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-section" class="section hidden">
+            <h1>Admin Panel</h1>
+            <div class="admin-actions">
+                <div class="admin-form">
+                    <h3>Create New Group</h3>
+                    <input type="password" id="admin-password" placeholder="Admin Password" required>
+                    <input type="text" id="new-group-name" placeholder="New Group Name" required>
+                    <input type="password" id="new-group-password" placeholder="New Group Password" required>
+                    <button onclick="createGroup()">Create Group</button>
+                </div>
+                
+                <div class="admin-form">
+                    <h3>Update Group</h3>
+                    <input type="text" id="update-group-name" placeholder="Group Name to Update" required>
+                    <input type="text" id="updated-name" placeholder="New Name (optional)">
+                    <input type="password" id="updated-password" placeholder="New Password (optional)">
+                    <button onclick="updateGroup()">Update Group</button>
+                </div>
+                
+                <div class="admin-form">
+                    <h3>Delete Group</h3>
+                    <input type="text" id="delete-group-name" placeholder="Group Name to Delete" required>
+                    <button onclick="deleteGroup()" class="delete-btn">Delete Group</button>
+                </div>
+            </div>
+            <button onclick="hideAdminPanel()">Back to Login</button>
+            <div id="admin-message" class="message"></div>
+        </div>
+
+        <!-- Chat Section -->
+        <div id="chat-section" class="section hidden">
+            <div class="chat-header">
+                <h2 id="current-group">Group: <span id="group-display"></span></h2>
+                <button onclick="leaveChat()" class="leave-btn">Leave Chat</button>
+            </div>
+            
+            <div id="chat-messages" class="chat-messages"></div>
+            
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Type your message..." maxlength="500">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

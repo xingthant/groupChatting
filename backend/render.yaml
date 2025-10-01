@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: group-chat-backend-mongodb
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        value: your_mongodb_connection_string
+      - key: ADMIN_PASSWORD
+        value: your_secure_admin_password_here
+      - key: JWT_SECRET
+        value: your_jwt_secret_here
