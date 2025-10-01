@@ -24,7 +24,7 @@
             <!-- Admin Section -->
             <div class="admin-section">
                 <h3>Admin Panel</h3>
-                <button onclick="showAdminPanel()">Manage Groups</button>
+                <button id="manage-groups-btn">Manage Groups</button>
             </div>
         </div>
 
@@ -37,7 +37,7 @@
                     <input type="password" id="admin-password" placeholder="Admin Password" required>
                     <input type="text" id="new-group-name" placeholder="New Group Name" required>
                     <input type="password" id="new-group-password" placeholder="New Group Password" required>
-                    <button onclick="createGroup()">Create Group</button>
+                    <button id="create-group-btn">Create Group</button>
                 </div>
                 
                 <div class="admin-form">
@@ -45,16 +45,16 @@
                     <input type="text" id="update-group-name" placeholder="Group Name to Update" required>
                     <input type="text" id="updated-name" placeholder="New Name (optional)">
                     <input type="password" id="updated-password" placeholder="New Password (optional)">
-                    <button onclick="updateGroup()">Update Group</button>
+                    <button id="update-group-btn">Update Group</button>
                 </div>
                 
                 <div class="admin-form">
                     <h3>Delete Group</h3>
                     <input type="text" id="delete-group-name" placeholder="Group Name to Delete" required>
-                    <button onclick="deleteGroup()" class="delete-btn">Delete Group</button>
+                    <button id="delete-group-btn" class="delete-btn">Delete Group</button>
                 </div>
             </div>
-            <button onclick="hideAdminPanel()">Back to Login</button>
+            <button id="back-to-login-btn">Back to Login</button>
             <div id="admin-message" class="message"></div>
         </div>
 
@@ -62,14 +62,14 @@
         <div id="chat-section" class="section hidden">
             <div class="chat-header">
                 <h2 id="current-group">Group: <span id="group-display"></span></h2>
-                <button onclick="leaveChat()" class="leave-btn">Leave Chat</button>
+                <button id="leave-chat-btn" class="leave-btn">Leave Chat</button>
             </div>
             
             <div id="chat-messages" class="chat-messages"></div>
             
             <div class="chat-input">
                 <input type="text" id="message-input" placeholder="Type your message..." maxlength="500">
-                <button onclick="sendMessage()">Send</button>
+                <button id="send-message-btn">Send</button>
             </div>
         </div>
     </div>
